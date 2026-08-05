@@ -1,29 +1,33 @@
-import { getUserProfile } from './services/github-api.js';
-import {
-    getSearchTerm,
-    onSearch,
-    renderError,
-    renderLoading,
-    renderProfile,
-} from './views/profile-view.js';
+import { fetchGithubUser, fetchGithubUserRepos } from './githubApi.js';
+import { renderProfile } from './profileView.js';
 
-async function searchProfile() {
-    const userName = getSearchTerm();
+const inputSearch = document.getElementById('input-search');
+const btnSearch = document.getElementById('btn-search');
+const profileResults = document.querySelector('.profile-results');
 
+async function getUserProfile() {
+    const userName = inputSearch.value;
     if (!userName) {
-        renderError('Por favor, digite o nome do usuário do GitHub.');
+        alert('Por favor, digite um nome de usuário do GitHub.');
+        profileResults.innerHTML = "";
         return;
     }
-
-    renderLoading();
-
+    profileResults.innerHTML = `<p class="loading">Carregando...</p>`;
     try {
-        const user = await getUserProfile(userName);
-        renderProfile(user);
+        const userData = await fetchGithubUser(userName);
+        const userRepos = await fetchGithubUserRepos(userName);
+        renderProfile(userData, userRepos, profileResults);
     } catch (error) {
         console.error('Erro ao buscar o perfil do usuário:', error);
-        renderError(error.message);
+        alert('Usuário não encontrado. Por favor, verifique o nome de usuário e tente novamente.');
+        profileResults.innerHTML = "";
     }
 }
 
-onSearch(searchProfile);
+btnSearch.addEventListener('click', getUserProfile);
+
+inputSearch.addEventListener('keyup', (event) => {
+    if (event.key === 'Enter') {
+        getUserProfile();
+    }
+});
